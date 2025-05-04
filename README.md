@@ -10,20 +10,26 @@ The python scripts implementing GMEnv and and Query Interface can be found in `/
 The example goal models and various tests and experiments against them can be found in `/examples`
 
 
-## Installation and Execution Instructions
+## Installation and Setup Instructions
 
-The scripts have been tested using the following versions of the python interpreter and key libraries:
+To ensure a reproducible environment, it is recommended to use a Python virtual environment. Follow these steps:
 
-* `python version 3.9.12`
-* `stable-baselines3 1.5.0`
-* `pyswip 0.2.11`
+1. **Clone the repository locally.**
+2. **Create and activate a virtual environment:**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+   (On Windows, use `venv\Scripts\activate`)
+3. **Install the required dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-Directions to run the test and experiments:
+   This will install all necessary packages with the correct versions for this project.
 
-* Clone the repository locally.
-* Acquire the DT-Golog code from [its creator's page](https://www.cs.ryerson.ca/~mes/publications/appendix/appendixC/dtgolog), and place it in a file called `DT-Golog.pl` under `/scripts/QE/`
-* Make the following changes so that it runs on SWI-Prolog
-  
+4. **Acquire the DT-Golog code** from [its creator's page](https://www.cs.ryerson.ca/~mes/publications/appendix/appendixC/dtgolog), and place it in a file called `DT-Golog.pl` under `/scripts/QE/`
+5. **Make the following changes so that it runs on SWI-Prolog**
   - Comment out the following:
     ```
     /* :- pragma(debug).  */
@@ -34,7 +40,7 @@ Directions to run the test and experiments:
     (not X) := (\+ X).
     cputime(5).
     ```
-* Run the test and trial scripts in the `/examples` folder.
+6. **Run the test and trial scripts in the `/examples` folder.**
 
 ## The Models
 
