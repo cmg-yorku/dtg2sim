@@ -35,7 +35,7 @@ class TestSum(unittest.TestCase):
     
     
     def setUp(self):
-        self.env = sim.GMEnv("./examples/discrete/1Order.pl")
+        self.env = sim.GMEnv("../../examples/discrete/1Order.pl")
         self.env.setDebug(False)
         self.env.setSeed(123)
         self.t = test.TestIt(self.env)
