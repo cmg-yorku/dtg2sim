@@ -10,20 +10,49 @@ The python scripts implementing GMEnv and and Query Interface can be found in `/
 The example goal models and various tests and experiments against them can be found in `/examples`
 
 
-## Installation and Execution Instructions
+## Prerequisites
+- Python 3.9 (required) - This project has been tested with Python 3.9 and may not work with other versions
+- SWI-Prolog (for running the DT-Golog code)
+- Git
 
-The scripts have been tested using the following versions of the python interpreter and key libraries:
+## Installation and Setup Instructions
 
-* `python version 3.9.12`
-* `stable-baselines3 1.5.0`
-* `pyswip 0.2.11`
+To ensure a reproducible environment, it is recommended to use a Python virtual environment. Follow these steps:
 
-Directions to run the test and experiments:
+1. **Clone the repository locally.**
+   ```bash
+   git clone <repository-url>
+   cd RLGen
+   ```
 
-* Clone the repository locally.
-* Acquire the DT-Golog code from [its creator's page](https://www.cs.ryerson.ca/~mes/publications/appendix/appendixC/dtgolog), and place it in a file called `DT-Golog.pl` under `/scripts/QE/`
-* Make the following changes so that it runs on SWI-Prolog
-  
+2. **Verify Python version and create virtual environment:**
+   ```bash
+   # Check Python version
+   python3.9 --version  # Should show Python 3.9.x
+   
+   # Create virtual environment with Python 3.9
+   python3.9 -m venv venv
+   
+   # Activate virtual environment
+   source venv/bin/activate  # On Linux/Mac
+   # OR
+   venv\Scripts\activate     # On Windows
+   ```
+
+3. **Install the required dependencies:**
+   ```bash
+   # First, install specific versions of pip, setuptools, and wheel
+   python3.9 -m pip install pip==21.0.0 setuptools==65.5.0 wheel==0.38.0
+   
+   # Then install project dependencies
+   python3.9 -m pip install -r requirements.txt
+   ```
+
+   This will install all necessary packages with the correct versions for this project.
+
+4. **Acquire the DT-Golog code** from [its creator's page](https://www.cs.ryerson.ca/~mes/publications/appendix/appendixC/dtgolog), and place it in a file called `DT-Golog.pl` under `/scripts/QE/`
+
+5. **Make the following changes so that it runs on SWI-Prolog**
   - Comment out the following:
     ```
     /* :- pragma(debug).  */
@@ -34,7 +63,7 @@ Directions to run the test and experiments:
     (not X) := (\+ X).
     cputime(5).
     ```
-* Run the test and trial scripts in the `/examples` folder.
+6. **Run the test and trial scripts in the `/examples` folder from your IDE.**
 
 ## The Models
 
