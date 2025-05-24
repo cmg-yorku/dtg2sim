@@ -18,7 +18,7 @@
 % OPTIONS 
 % 
 
-getNumRuns(1).
+getNumRuns(2).
 getObsType(discrete).
 
 
@@ -30,10 +30,9 @@ getObsType(discrete).
 %
 % C R O S S   S T A T E 
 %
-transStateStructure([cost(_),overallQuality(_),happyCustomer(_)]).
+transStateStructure([cost(_), happyCustomer(_)]).
 
-
-
+init([cost(0.0), happyCustomer(0.0)]).
 
 %
 % EXPORTED STATE ELEMENTS 
@@ -97,7 +96,6 @@ proc(orderMaterial, orderFromSupplierA # orderFromSupplierB).
 
 fluentList([deliveredInTimeA_fl,neverDeliveredA_fl,deliveredLateA_fl,deliveredInTimeB_fl,neverDeliveredB_fl,deliveredLateB_fl]).
 
-
 %
 % SUCCESSOR STATE AXIOMS 
 % 
@@ -153,33 +151,47 @@ goalAchieved(S):- orderMaterial_Sat(S).
 % 
 
 
-
-cost(V,S) :- val(R_deliveredInTimeA_fl,deliveredInTimeA_fl(S)),
+cost(V,s0):-current_predicate(init/1),init(L),member(cost(V), L),!.
+cost(0,s0):-!.
+cost(V,S) :- cost(R_cost_init,s0),
+					val(R_deliveredInTimeA_fl,deliveredInTimeA_fl(S)),
 					val(R_deliveredInTimeB_fl,deliveredInTimeB_fl(S)),
 					val(R_deliveredLateA_fl,deliveredLateA_fl(S)),
 					val(R_deliveredLateB_fl,deliveredLateB_fl(S)),
 					val(R_neverDeliveredA_fl,neverDeliveredA_fl(S)),
 					val(R_neverDeliveredB_fl,neverDeliveredA_fl(S)),
-					V is R_deliveredInTimeA_fl*0.5 +
+					V is 
+						R_cost_init +
+						R_deliveredInTimeA_fl*0.5 +
 						R_deliveredInTimeB_fl*1.0 +
 						R_deliveredLateA_fl*0.5 +
 						R_deliveredLateB_fl*1.0 +
 						R_neverDeliveredA_fl*0.5 +
 						R_neverDeliveredB_fl*1.0.
-
-happyCustomer(V,S) :- val(R_deliveredInTimeA_fl,deliveredInTimeA_fl(S)),
+						
+happyCustomer(V,s0):-current_predicate(init/1),init(L),member(happyCustomer(V), L),!.
+happyCustomer(0,s0):-!.
+happyCustomer(V,S) :- happyCustomer(R_happyCustomer_init,s0),
+					val(R_deliveredInTimeA_fl,deliveredInTimeA_fl(S)),
 					val(R_deliveredInTimeB_fl,deliveredInTimeB_fl(S)),
 					val(R_deliveredLateA_fl,deliveredLateA_fl(S)),
 					val(R_deliveredLateB_fl,deliveredLateB_fl(S)),
-					V is R_deliveredInTimeA_fl*1.0 +
+					V is
+						R_happyCustomer_init +
+						R_deliveredInTimeA_fl*1.0 +
 						R_deliveredInTimeB_fl*1.0 +
 						R_deliveredLateA_fl*0.7 +
 						R_deliveredLateB_fl*0.7.
 
-					
-overallQuality(V,S) :- happyCustomer(R_reward_happyCustomer,S),
+overallQuality(V,s0):-current_predicate(init/1),init(L),member(overallQuality(V), L),!.
+overallQuality(0,s0):-!.
+overallQuality(V,S) :- 
+						overallQuality(R_overallQuality_init,s0),
+						happyCustomer(R_reward_happyCustomer,S),
 						cost(R_reward_cost,S),
-						V is R_reward_happyCustomer*0.7 + R_reward_cost*0.3.
+						V is
+							R_overallQuality_init +
+							R_reward_happyCustomer*0.3 + R_reward_cost*0.7.
 
 
 

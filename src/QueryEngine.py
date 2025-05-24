@@ -78,14 +78,6 @@ class QueryEngine(QMI):
         ccState = list(self.prolog.query(query))[0]['State']
         return ccState
 
-    def getRun(self,eH):
-        """
-        [Refer to QMI function documentation.]
-        """
-        query = "getRun([" + eH + "],C)."
-        currentRun = list(self.prolog.query(query))[0]['C']
-        return currentRun
-            
     def done(self,eH):
         """
         [Refer to QMI function documentation.]
@@ -97,6 +89,17 @@ class QueryEngine(QMI):
             result = False
         return result            
     
+    def runDone(self,eH):
+        """
+        [Refer to QMI function documentation.]
+        """
+        s = "runDone([" + eH + "])."
+        if (list(self.prolog.query(s))):
+            result = True
+        else:
+            result = False
+        return result   
+
     def getDomainParams(self):
         """
         Returns various size parameters of the domain.

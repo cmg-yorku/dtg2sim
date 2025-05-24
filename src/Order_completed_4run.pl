@@ -18,7 +18,7 @@
 % OPTIONS 
 % 
 
-getNumRuns(1).
+getNumRuns(4).
 getObsType(discrete).
 
 
@@ -96,7 +96,6 @@ proc(orderMaterial, orderFromSupplierA # orderFromSupplierB).
 % 
 
 fluentList([deliveredInTimeA_fl,neverDeliveredA_fl,deliveredLateA_fl,deliveredInTimeB_fl,neverDeliveredB_fl,deliveredLateB_fl]).
-
 
 %
 % SUCCESSOR STATE AXIOMS 

@@ -1,5 +1,5 @@
 % DT-Golog Specification for Model: Spec 
-% Date Translated: 2025-05-22 14:20:56 
+% Date Translated: 2025-05-23 12:29:04 
 % From source: Spec 
 % Using DTTRanslate 
 :-style_check(-discontiguous).
@@ -62,24 +62,24 @@ agentActionList([orderFromSupplierA,orderFromSupplierB]).
 agentAction(orderFromSupplierA).
 agentAction(orderFromSupplierB).
 
-stochasticActionList([deliveredInTimeAEff,neverDeliveredAEff,deliveredLateAEff,deliveredInTimeBEff,neverDeliveredBEff,deliveredLateBEff]).
+stochasticActionList([deliveredInTimeA_Eff,neverDeliveredA_Eff,deliveredLateA_Eff,deliveredInTimeB_Eff,neverDeliveredB_Eff,deliveredLateB_Eff]).
 
-stochasticAction(deliveredInTimeAEff).
-stochasticAction(neverDeliveredAEff).
-stochasticAction(deliveredLateAEff).
-stochasticAction(deliveredInTimeBEff).
-stochasticAction(neverDeliveredBEff).
-stochasticAction(deliveredLateBEff).
+stochasticAction(deliveredInTimeA_Eff).
+stochasticAction(neverDeliveredA_Eff).
+stochasticAction(deliveredLateA_Eff).
+stochasticAction(deliveredInTimeB_Eff).
+stochasticAction(neverDeliveredB_Eff).
+stochasticAction(deliveredLateB_Eff).
 
-nondetActions(orderFromSupplierA,_,[deliveredInTimeAEff,neverDeliveredAEff,deliveredLateAEff]).
-nondetActions(orderFromSupplierB,_,[deliveredInTimeBEff,neverDeliveredBEff,deliveredLateBEff]).
+nondetActions(orderFromSupplierA,_,[deliveredInTimeA_Eff,neverDeliveredA_Eff,deliveredLateA_Eff]).
+nondetActions(orderFromSupplierB,_,[deliveredInTimeB_Eff,neverDeliveredB_Eff,deliveredLateB_Eff]).
 
-prob(deliveredInTimeAEff,0.75,_).
-prob(neverDeliveredAEff,0.05,_).
-prob(deliveredLateAEff,0.2,_).
-prob(deliveredInTimeBEff,0.5,_).
-prob(neverDeliveredBEff,0.15,_).
-prob(deliveredLateBEff,0.35,_).
+prob(deliveredInTimeA_Eff,0.75,_).
+prob(neverDeliveredA_Eff,0.05,_).
+prob(deliveredLateA_Eff,0.2,_).
+prob(deliveredInTimeB_Eff,0.5,_).
+prob(neverDeliveredB_Eff,0.15,_).
+prob(deliveredLateB_Eff,0.35,_).
 
 
 
@@ -97,36 +97,31 @@ proc(orderMaterial, orderFromSupplierA # orderFromSupplierB).
 
 fluentList([deliveredInTimeA_fl,neverDeliveredA_fl,deliveredLateA_fl,deliveredInTimeB_fl,neverDeliveredB_fl,deliveredLateB_fl]).
 
-
 %
 % SUCCESSOR STATE AXIOMS 
 % 
 
-deliveredInTimeA_fl(do(A,S)) :- deliveredInTimeA_fl(S); A=deliveredInTimeAEff.
-neverDeliveredA_fl(do(A,S)) :- neverDeliveredA_fl(S); A=neverDeliveredAEff.
-deliveredLateA_fl(do(A,S)) :- deliveredLateA_fl(S); A=deliveredLateAEff.
-deliveredInTimeB_fl(do(A,S)) :- deliveredInTimeB_fl(S); A=deliveredInTimeBEff.
-neverDeliveredB_fl(do(A,S)) :- neverDeliveredB_fl(S); A=neverDeliveredBEff.
-deliveredLateB_fl(do(A,S)) :- deliveredLateB_fl(S); A=deliveredLateBEff.
+deliveredInTimeA_fl(do(A,S)) :- deliveredInTimeA_fl(S); A=deliveredInTimeA_Eff.
+neverDeliveredA_fl(do(A,S)) :- neverDeliveredA_fl(S); A=neverDeliveredA_Eff.
+deliveredLateA_fl(do(A,S)) :- deliveredLateA_fl(S); A=deliveredLateA_Eff.
+deliveredInTimeB_fl(do(A,S)) :- deliveredInTimeB_fl(S); A=deliveredInTimeB_Eff.
+neverDeliveredB_fl(do(A,S)) :- neverDeliveredB_fl(S); A=neverDeliveredB_Eff.
+deliveredLateB_fl(do(A,S)) :- deliveredLateB_fl(S); A=deliveredLateB_Eff.
 
 %
 % PRECONDITION AXIOMS 
 % 
 
-poss(deliveredInTimeAEff,S) :- \+ orderFromSupplierA_Att(S).
-poss(neverDeliveredAEff,S) :- \+ orderFromSupplierA_Att(S).
-poss(deliveredLateAEff,S) :- \+ orderFromSupplierA_Att(S).
-poss(deliveredInTimeBEff,S) :- \+  orderFromSupplierB_Att(S).
-poss(neverDeliveredBEff,S) :- \+ orderFromSupplierB_Att(S).
-poss(deliveredLateBEff,S) :- \+ orderFromSupplierB_Att(S).
+poss(deliveredInTimeA_Eff,S) :- \+ orderFromSupplierA_Att(S),\+ orderFromSupplierB_Att(S).
+poss(neverDeliveredA_Eff,S) :- \+ orderFromSupplierA_Att(S),\+ orderFromSupplierB_Att(S).
+poss(deliveredLateA_Eff,S) :- \+ orderFromSupplierA_Att(S),\+ orderFromSupplierB_Att(S).
+poss(deliveredInTimeB_Eff,S) :- \+ orderFromSupplierB_Att(S),\+ orderFromSupplierA_Att(S).
+poss(neverDeliveredB_Eff,S) :- \+ orderFromSupplierB_Att(S),\+ orderFromSupplierA_Att(S).
+poss(deliveredLateB_Eff,S) :- \+ orderFromSupplierB_Att(S),\+ orderFromSupplierA_Att(S).
 
-poss(orderFromSupplierA,S) :- (poss(deliveredInTimeAEff,S);
-								poss(neverDeliveredAEff,S);
-								poss(deliveredLateAEff,S)),\+ orderFromSupplierB_Att(S).
-poss(orderFromSupplierB,S) :- (poss(deliveredInTimeBEff,S);
-								poss(neverDeliveredBEff,S);
-								poss(deliveredLateBEff,S)),\+ orderFromSupplierA_Att(S).
 
+poss(orderFromSupplierA,S) :- (poss(deliveredInTimeA_Eff,S);poss(neverDeliveredA_Eff,S);poss(deliveredLateA_Eff,S)).
+poss(orderFromSupplierB,S) :- (poss(deliveredInTimeB_Eff,S);poss(neverDeliveredB_Eff,S);poss(deliveredLateB_Eff,S)).
 
 %
 % SATISFACTION FORMULAE 
@@ -136,8 +131,6 @@ orderFromSupplierA_Sat(S) :- deliveredInTimeA_fl(S);deliveredLateA_fl(S).
 orderFromSupplierB_Sat(S) :- deliveredInTimeB_fl(S);deliveredLateB_fl(S).
 orderMaterial_Sat(S) :- orderFromSupplierA_Sat(S);orderFromSupplierB_Sat(S).
 
-
-
 %
 % ATTEMPT FORMULAE 
 % 
@@ -146,12 +139,15 @@ orderFromSupplierA_Att(S) :- deliveredInTimeA_fl(S);neverDeliveredA_fl(S);delive
 orderFromSupplierB_Att(S) :- deliveredInTimeB_fl(S);neverDeliveredB_fl(S);deliveredLateB_fl(S).
 orderMaterial_Att(S) :- orderFromSupplierA_Att(S);orderFromSupplierB_Att(S).
 
-goalAchieved(S):- orderMaterial_Sat(S).
+%
+% ROOT SATISFACTION 
+% 
+
+goalAchieved(S) :- orderMaterial_Sat(S).
 
 %
 % REWARD FORMULAE 
 % 
-
 
 
 cost(V,S) :- val(R_deliveredInTimeA_fl,deliveredInTimeA_fl(S)),
@@ -183,6 +179,7 @@ overallQuality(V,S) :- happyCustomer(R_reward_happyCustomer,S),
 
 
 
+
 rewardInst(R,S) :- overallQuality(R,S).
 
 
@@ -190,12 +187,12 @@ rewardInst(R,S) :- overallQuality(R,S).
 % SENSE CONDITIONS 
 % 
 
-senseCondition(deliveredInTimeAEff,deliveredInTimeAEff_fl).
-senseCondition(neverDeliveredAEff,neverDeliveredAEff_fl).
-senseCondition(deliveredLateAEff,deliveredLateAEff_fl).
-senseCondition(deliveredInTimeBEff,deliveredInTimeBEff_fl).
-senseCondition(neverDeliveredBEff,neverDeliveredBEff_fl).
-senseCondition(deliveredLateBEff,deliveredLateBEff_fl).
+senseCondition(deliveredInTimeA_Eff,deliveredInTimeA_Eff_fl).
+senseCondition(neverDeliveredA_Eff,neverDeliveredA_Eff_fl).
+senseCondition(deliveredLateA_Eff,deliveredLateA_Eff_fl).
+senseCondition(deliveredInTimeB_Eff,deliveredInTimeB_Eff_fl).
+senseCondition(neverDeliveredB_Eff,neverDeliveredB_Eff_fl).
+senseCondition(deliveredLateB_Eff,deliveredLateB_Eff_fl).
 
 %
 % RESTORE SITUATION ARGUMENT 
@@ -214,6 +211,6 @@ restoreSitArg(orderFromSupplierB_Att,S,orderFromSupplierB_Att(S)).
 restoreSitArg(orderMaterial_Sat,S,orderMaterial_Sat(S)).
 restoreSitArg(orderMaterial_Att,S,orderMaterial_Att(S)).
 restoreSitArg(cost(X),S,cost(X,S)).
-restoreSitArg(happyCustomer(X),S,happyCustomer(X,S)).
 restoreSitArg(overallQuality(X),S,overallQuality(X,S)).
+restoreSitArg(happyCustomer(X),S,happyCustomer(X,S)).
 

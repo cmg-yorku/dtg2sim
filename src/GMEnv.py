@@ -194,9 +194,9 @@ class GMEnv(Env):
                "tH":self.tH,
                "eH":self.eH,
                "Run":self.run,
-               "Achieved":self.achieved(),
+               "Episode Done":self.done(),
                "TransState": self.qmi.getTransState(self.eHString()),
-               "is_success": ((self.run == self.runsNum))
+               "Last Run": ((self.run == self.runsNum))
                }
 
         if (self.debug):
@@ -211,7 +211,6 @@ class GMEnv(Env):
             print('--> Run: {}'.format(self.run))
             print('--> Reward: {}'.format(self.reward))
             print('--> Episode Done: {}'.format(self.done()))
-            print('--> Goal Achieved: {}'.format(self.achieved()))
             print('--> TransState: {}'.format(inf['TransState']))
             #print("--> Initial state {}".format(self.initBitState))
         
@@ -220,8 +219,11 @@ class GMEnv(Env):
     def done(self):
         assert(self.run <= self.runsNum)
         #print("Run {} for {} is done? {}".format(self.run,self.eHString(),self.qmi.done(self.eHString())))
-        return (self.qmi.done(self.eHString()) or (self.run == self.runsNum) or self.terminateEpisode )
-            
+        return (self.qmi.done(self.eHString()) or (self.run == self.runsNum) or self.terminateEpisode)
+
+    def runDone(self):
+        return (self.qmi.runDone(self.eHString()))
+
     def render(self):
         # Visualization not implemented
         pass
@@ -269,7 +271,8 @@ class GMEnv(Env):
 
 
     def runConcluded(self):
-        return (self.achieved())
+        #return (self.achieved())
+        return self.qmi.runDone(self.eHString())
     
     def advanceRun(self):
         # Grab trans values from the latest eH state and assert them to the new
@@ -293,10 +296,18 @@ class GMEnv(Env):
    
     def printDebug(self):
         deH, dtH, dpossA, dbitState = self.getDebug()
-        print("**** ** eH: {}".format(deH))
         print("**** ** tH: {}".format(dtH))
+        print("**** ** eH: {}".format(deH))
+        print("**** ** Actual eH: {}".format(self.eHString()))
         print("**** ** Poss: {}".format(dpossA))
         print("**** ** State: {}".format(dbitState))
+        print('**** ** Run: {}'.format(self.run))
+        print('**** ** Reward: {}'.format(self.reward))
+        print('**** ** Episode Done: {}'.format(self.runDone()))
+        print('**** ** Episode Done: {}'.format(self.episodeDone()))
+        print('**** ** Root Achieved: {}'.format(self.achieved()))
+        print('**** ** More Actions Possible: {}'.format(self.anyActionPossible()))
+
 
     def setDebug(self,status):
         self.debug = status

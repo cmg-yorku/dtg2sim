@@ -160,3 +160,20 @@ class QMI:
             True if the episode is done.
         """
         pass
+    def episodeDone(self,run,eH) -> bool:
+        """
+        Checks if eH marks the end of an episode, when run is run.
+
+        Parameters
+        ----------
+         run : String
+               A number from 0 to maxRuns-1 representing the current run.
+         eH  : String
+               A string of the form "i_1, i_2, ...", each i being an integer representing an effect (nature action) in the goal model (after multi-run correction).
+
+        Returns
+        -------
+        bool
+            True if the episode is done.
+        """
+        pass

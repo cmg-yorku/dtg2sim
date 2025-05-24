@@ -132,7 +132,10 @@ reward(R,S) :- \+ (penalizeDeadlock(1), deadlock(S), deadlockPenalty(R)),
 				rewardEpis(R,S).				
 
 
-runDone(S) :- noActionPossible(S);goalAchieved(S).
+
+/* 
+ * CONTROL PREDICATES
+ */
 deadlock(S) :- noActionPossible(S),\+ goalAchieved(S).
 
 

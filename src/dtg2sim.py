@@ -71,12 +71,10 @@ class dtg2sim():
             
             while not done:
                 self.env.render()
-                if not policy: 
+                if not policy: # Policy is empty
                     # Executing Random Policy
-                    #print("Random")
-                    #print(policy)
                     action = self.env.action_space.sample()
-                elif pol:
+                elif pol: 
                     # Executing given policy
                     action = pol.pop(0)
                 else: 
@@ -85,14 +83,13 @@ class dtg2sim():
                     print("     Actions left in policy: {}".format(pol))
                     print("     State: {}".format(n_state))
                     print("     Episode done: {}".format(done))
-                    
-                    # Executing given policy
-                    
-                    
+
                 n_state, reward, done, info = self.env.step(action)
-                if (reward != self.env.getInfeasiblePenalty()) or (not forgivePenalty):
-                    self.score += reward
                 
+                if (reward != self.env.getInfeasiblePenalty()) or (not forgivePenalty):
+                    #self.score += reward
+                    self.score = reward
+                    
                 if self.debug: 
                     print(' ')
                     print('New Action Attempt:')
@@ -102,24 +99,7 @@ class dtg2sim():
                     print('--> Reward: {}'.format(reward))
                     print('--> Is Done: {}'.format(done))
                     print('--> Cum. Reward: {}'.format(self.score))
-    
-                
-                #Check if you reached a deadlock
-                #print("Checking for deadlock:...")
-                #canExit = False
-                #for a in range(0,self.env.action_space.n - 1) :
-                #    canExit = canExit or self.env.possible(a) 
-                
-                #if (not canExit and not done):
-                #    print("**** Unspotted Deadlock! ***")
-                    #sl, sa, pos, bitst = self.env.debug()
-                    #print("**** ** SL: {}".format(sl))
-                    #print("**** ** AL: {}".format(sa))
-                    #print("**** ** Poss: {}".format(pos))
-                    #print("**** ** State: {}".format(bitst))
-                    #print("**** ** Last action:{} ****".format(action))
-                #    break
-                
+
                 if (policy and (not pol) and (not done)):
                     print("**** Error: Failed to end deterministic policy ***")
             

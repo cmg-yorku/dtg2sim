@@ -114,13 +114,22 @@ Given a situation, calculates the current run.
 */
 /*getRun(SNum,C) :- constructSituation(SNum,S),runCounter(C,S).*/
 
+
+/*
+
+CONTROL PREDICATES
+
+*/
+
 /*
 done(+SNum)
 Decides if a situation signifies the end of an episode (due to deadlock or root goal completion).
 +SNum: a list of indexes of stochastic actions, representing the current situation.
 */
 done(SNum) :- constructSituation(SNum,S),noActionPossible(S),!.
-/* done(SNum) :- constructSituation(SNum,S),episodeDone(S).*/
+runDone(SNum) :- constructSituation(SNum,S),(noActionPossible(S);goalAchieved(S)).
+
+
 
 /*
 
