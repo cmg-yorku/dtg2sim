@@ -141,7 +141,40 @@ class GMEnv(Env):
             return (self.qmi.possibleAt(action, self.eHString()))
 
     def step(self, action, choice = -1):
-        
+        """
+        Attempts an action.
+
+        Parameters:
+            action (int): An integer representing the action to be 
+                performed. Action indexes [0,...,n-1] are mapped to the list
+                appearing as an argment in agentActionList() of the PL file. 
+                E.g., assuming:
+                
+                    agentActionList([orderFromSupplierA,orderFromSupplierB]).
+                 
+                orderFromSupplierA maps to 0
+                orderFromSupplierB maps to 1
+                 
+            choice (int): Enforce a specific stochastic action. Indexing is done 
+                As above, but the indexed list is now the argument of
+                stochasticActionList(). For example in:
+            
+                    stochasticActionList([deliveredInTimeA_Eff,neverDeliveredA_Eff,
+                                  deliveredLateA_Eff,deliveredInTimeB_Eff,
+                                  neverDeliveredB_Eff,deliveredLateB_Eff]).
+                                  
+                deliveredLateA_Eff is represented by 2
+            
+                If choice == -1 (default) step assumes a random choice of stochastic
+                action based on the chosen agent action and the spec 
+                (see nondetActions/3 and prob/3 predicates).
+
+        Returns:
+            newState (float): An integer representing the new state.
+            reward (float): the reward collected
+            done (boolean): whether the episode is done
+            inf (dictionary): other state information.
+        """
         stAction = -1
 
         if (self.possible(action)):
@@ -194,10 +227,12 @@ class GMEnv(Env):
                "tH":self.tH,
                "eH":self.eH,
                "Run":self.run,
-               "Episode Done":self.done(),
+               "Achieved":self.achieved(),
                "TransState": self.qmi.getTransState(self.eHString()),
-               "Last Run": ((self.run == self.runsNum))
+               "Episode Done":self.done(),
+               "is_success": ((self.run == self.runsNum))
                }
+               
 
         if (self.debug):
             print(' ')

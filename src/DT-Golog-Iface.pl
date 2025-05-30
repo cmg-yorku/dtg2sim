@@ -14,11 +14,13 @@
 Default (recommended) Configuration. 
 Both DTG and the QE will assume that instant rather than cummulative reward is calcualted.
 */
-getRewardMode(instant).
-getRewardModeDTG(instant).
+getRewardMode(episodic).
+getRewardModeDTG(episodic).
 getInfeasiblePenalty(-100).
 penalizeDeadlock(0).
 deadlockPenalty(0).
+
+
 
 /* 
 possibleAt(+SituationNum,+Action)
@@ -164,7 +166,11 @@ Returns a list of fluent signatures (Terms) as well as the minimum (Mins) and ma
 Application: to be directly hard-coded in the domain specification. 
 */
 getStateShapeInfo(Terms,Mins,Maxs) :- 
+			current_predicate(ccStateShapeInfo/1),
 			ccStateShapeInfo(X),unwrapStateShapeInfo(X,Terms,Mins,Maxs).
+getStateShapeInfo(Terms,Mins,Maxs) :- 
+			continuousExportedSet(X),unwrapStateShapeInfo(X,Terms,Mins,Maxs).
+
 
 /*
 achieved(+SNum)

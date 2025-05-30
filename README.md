@@ -1,28 +1,18 @@
-# RL Gen
-Title: _Tool and Reproducibility Package for: Model-driven Design and Generation of Training Simulators for Reinforcement Learning_
+# dtg2Sim: Enabling simulation of and reinforcement learning with DT-Golog domains
 
-
-
-## Overview
-This repository contains the scripts and examples that accompany the conference submission "Model-driven Design and Generation of Domain Simulators for Reinforcement Learning". 
-
-The python scripts implementing GMEnv and and Query Interface can be found in `/scripts`
-The example goal models and various tests and experiments against them can be found in `/examples`
-
-
+`dtg2Sim` is a tool that allows simulations of domains specified in DT-Golog for the purpose of training stable_baselines2 Reinforcement Learning (RL) agents. The tool reads a DT-Golog specification, minimally augmented with configuration information, and avails it for simulation and training.
 ## Prerequisites
 - Python 3.9 (required) - This project has been tested with Python 3.9 and may not work with other versions
 - SWI-Prolog (for running the DT-Golog code)
 - Git
-
 ## Installation and Setup Instructions
 
 To ensure a reproducible environment, it is recommended to use a Python virtual environment. Follow these steps:
 
 1. **Clone the repository locally.**
    ```bash
-   git clone <repository-url>
-   cd RLGen
+   git clone <this-repository-url>
+   cd dtg2sim
    ```
 
 2. **Verify Python version and create virtual environment:**
@@ -63,24 +53,40 @@ To ensure a reproducible environment, it is recommended to use a Python virtual 
     (not X) := (\+ X).
     cputime(5).
     ```
-6. **Run the test and trial scripts in the `/examples` folder from your IDE.**
 
-## The Models
+# Usage
 
-* Several models have been developed for tests and experiments. They can be reviewed in GoalModels.drawio which can be opened using https://app.diagrams.net/
-* The corresponding specifications can be found in the `.pl` file in the `/examples` folder. The same model may have both a discrete and a continuous implementation (which are different only in one line of code whereby the state space is specified).
-* Files named `[XXX]_Tests.py` contain simple python `unittest` tests.
-* Files named `[XXX]_Trials.py` contain simulation and learning experiments. 
-  * For running simulations or learning be sure to give meaningful iteration numbers to `simRandomIter`, `simOptimalRandomIter`, `trainingIter` (number of training steps) `testingIter` (number of testing episodes). `10,000` is a good number to start with.
-  * `learningAlgorithm` can be one of `A2C`, `PPO`, or `DQN` implemented as part of [stable-baselines3](https://stable-baselines3.readthedocs.io/en/master/guide/algos.html)
+Load the environment as follows:
 
+```
+python -i main.py [DT-Golog Spec]
+```
 
+for example:
+
+```
+python -i main.py ./src/Order.pl
+```
+
+You will be greeted with:
+
+```
+Loaded Specification: ./src/Order.pl
+Access dtg2sim via varibale c, GMEnv via g, and QueryEngine via e.
+
+To simulate..: c.simulate()
+To train.....: c.train()
+To debug.....: g.reset() followed by repeated g.step(agentAction,[stochasticAction]).
+
+For parameter info: help([dtg2sim or GMEnv].[method])
+```
+
+Follow these directions to simulate or train the spec.
+# See also
+
+The (extended) DT-Golog will typically be the result of a translation from iStarDT-X, an XML based language for representing iStar-DT domains. Please visit the dtx2dtg repository for more information.
 # Contact
 
-Please send questions, issues, bugs and recommendations to [liaskos@yorku.ca](mailto:liaskos@yorku.ca?Subject=RLGen).
+Please send questions, issues, bugs, and recommendations to [liaskos@yorku.ca](mailto:liaskos@yorku.ca?Subject=RLGen).
 
-  
-    
-
-    
 

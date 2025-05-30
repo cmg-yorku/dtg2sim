@@ -1,5 +1,5 @@
 % DT-Golog Specification for Model: Spec 
-% Date Translated: 2025-05-27 19:39:28 
+% Date Translated: 2025-05-27 19:58:29 
 % From source: Spec 
 % Using DTTRanslate 
 :-style_check(-discontiguous).
@@ -18,7 +18,7 @@
 % OPTIONS 
 % 
 
-getNumRuns(1).
+getNumRuns(3).
 getObsType(discrete).
 
 

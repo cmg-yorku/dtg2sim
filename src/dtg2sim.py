@@ -55,7 +55,34 @@ class dtg2sim():
         return(n_state,reward,self.score,done,info)
 
         
-    def simulate(self,episodes,policy = [],debug = False, forgivePenalty = True):
+    def simulate(self,episodes = 1_000,policy = [],debug = False, forgivePenalty = True):
+        """
+        Performs a fixed number of simulation runs.
+
+        Parameters:
+            episodes (int): The number of episodes to simulate (deafult is 1,000).
+            policy (list of integers): A list of integers representing the actions to be 
+                performed in sequence. Action indexes [0,...,n-1] are mapped to the list
+                appearing as an argment in agentActionList() of the PL file. E.g., assuming:
+                
+                    agentActionList([orderFromSupplierA,orderFromSupplierB]).
+                 
+                orderFromSupplierA maps to 0
+                orderFromSupplierB maps to 1
+                 
+                For single-run episodes policy [0] is the policy to always perform orderFromSupplierA.
+                For four-run episodes policy [0,1,0,1] describes alternating decisions.
+            
+                If policy is empty (default) random choice of actions is performed.
+
+            debug (boolean): True for debug information (default is False)
+            
+            forgivePenalty (boolean): If true (default), exclude user-defined negative penalty from 
+                average reward calculation.
+            
+        Returns:
+            float: The average reward.
+        """
         totalScore = 0
         if policy:  
             print("Starting simulations on extraneously defined policy:")
@@ -87,7 +114,6 @@ class dtg2sim():
                 n_state, reward, done, info = self.env.step(action)
                 
                 if (reward != self.env.getInfeasiblePenalty()) or (not forgivePenalty):
-                    #self.score += reward
                     self.score = reward
                     
                 if self.debug: 
@@ -109,11 +135,23 @@ class dtg2sim():
         #print('Simulation: average reward: {}'.format(totalScore/episodes))
         print("")
         print("Simulations complete.")
+        print("Average Reward: {}".format(totalScore/episodes))
         return(totalScore/episodes)
 
 
-    def train(self, learn_iter = 10_000, test_iter = 10000,logging= 1000, algo = "A2C"):
-        
+    def train(self, learn_iter = 1_000, test_iter = 1_000,logging = 1_000, algo = "A2C"):
+        """
+        Trains an RL agent against the specification
+
+        Parameters:
+            learn_iter (int) : The number of learing iterations (deafult is 1,000).
+            test_iter (int)  : The number of testing iterations (deafult is 1,000).
+            logging (int)    : How often to log (deafult is 1,000).
+            algo (String)    : One of "A2C" (default), "PPO", "DQN".
+            
+        Returns:
+            float: The average reward.
+        """
         st = time.process_time()
         print("Attempting {} model construction.".format(algo))
         
@@ -140,6 +178,7 @@ class dtg2sim():
         params = self.model.get_parameters().get("policy.optimizer").get("param_groups")
         
         totalReward = 0
+        totalRewardwPenalty = 0
         totalIter = test_iter
         
         # Time
@@ -156,14 +195,21 @@ class dtg2sim():
             while (not(episodeDone)):
                 action, _state = self.model.predict(obs, deterministic=True)
                 obs, reward, done, info = self.vec_env.step(action)
-                episodeReward = episodeReward + reward[0]
+                episodeReward = reward[0]
                 episodeDone = done[0]
-            totalReward  = totalReward + episodeReward 
+                
+            totalRewardwPenalty  = totalRewardwPenalty + episodeReward
+            if (info[0]['is_success']):
+              totalReward  = totalReward + episodeReward
+            
+            # print("Episode {} Reward: {}".format(i,episodeReward))
         print("")
         print("Learning simulations complete.")
         result = totalReward/totalIter
+        resultwp = totalRewardwPenalty/totalIter
         
-        
+        print("Average Reward: {}".format(result))
+        print("Average Reward (including penalties): {}".format(resultwp))
         return result, params
       
     def getModel(self):

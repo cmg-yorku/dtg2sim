@@ -1,5 +1,5 @@
 % DT-Golog Specification for Model: Spec 
-% Date Translated: 2025-05-23 12:51:14 
+% Date Translated: 2025-05-27 20:20:03 
 % From source: Spec 
 % Using DTTRanslate 
 :-style_check(-discontiguous).
@@ -30,7 +30,7 @@ getObsType(discrete).
 %
 % C R O S S   S T A T E 
 %
-transStateStructure([cost(_),overallQuality(_),reputation(_)]).
+transStateStructure([cost(_),reputation(_)]).
 
 
 
@@ -42,13 +42,22 @@ transStateStructure([cost(_),overallQuality(_),reputation(_)]).
 %
 % D I S C R E T E   E X P O R T S
 %
-discreteExportedSet([deliveredInTimeA_fl,deliveredInTimeB_fl,deliveredLateA_fl,deliveredLateB_fl,neverDeliveredA_fl,neverDeliveredB_fl]).
+discreteExportedSet([deliveredInTimeA_fl,deliveredInTimeB_fl,deliveredLateA_fl,deliveredLateB_fl,neverDeliveredA_fl,neverDeliveredB_fl,goodQualityA_fl,goodQualityB_fl,badQualityA_fl,badQualityB_fl]).
 
 
 %
 % C O N T I N U O U S   E X P O R T S
 %
 continuousExportedSet([]).
+
+
+
+
+%
+% INITIALIZATIONS 
+% 
+
+init([cost(0),reputation(0),overallQuality(0)]).
 
 
 
@@ -102,7 +111,9 @@ prob(badQualityB_Eff,0.5,_).
 proc(orderMaterial, orderFromSupplierA # orderFromSupplierB).
 proc(assignWork, assignToSubcontractorA # assignToSubcontractorB).
 proc(buildRoof, orderMaterial : assignWork).
-
+dtgRun :- write('Policy: '), bp(buildRoof,10,_,U,P,x),
+        write('Utility: '),writeln(U), 
+        write('Probability: '),writeln(P).
 
 
 %
@@ -136,10 +147,10 @@ poss(deliveredLateA_Eff,S) :- \+ orderFromSupplierA_Att(S),\+ orderFromSupplierB
 poss(deliveredInTimeB_Eff,S) :- \+ orderFromSupplierB_Att(S),\+ orderFromSupplierA_Att(S).
 poss(neverDeliveredB_Eff,S) :- \+ orderFromSupplierB_Att(S),\+ orderFromSupplierA_Att(S).
 poss(deliveredLateB_Eff,S) :- \+ orderFromSupplierB_Att(S),\+ orderFromSupplierA_Att(S).
-poss(goodQualityA_Eff,S) :- \+ assignToSubcontractorA_Att(S),\+ assignToSubcontractorB_Att(S).
-poss(badQualityA_Eff,S) :- \+ assignToSubcontractorA_Att(S),\+ assignToSubcontractorB_Att(S).
-poss(goodQualityB_Eff,S) :- \+ assignToSubcontractorB_Att(S),\+ assignToSubcontractorA_Att(S).
-poss(badQualityB_Eff,S) :- \+ assignToSubcontractorB_Att(S),\+ assignToSubcontractorA_Att(S).
+poss(goodQualityA_Eff,S) :- \+ assignToSubcontractorA_Att(S),\+ assignToSubcontractorB_Att(S),orderMaterial_Sat(S).
+poss(badQualityA_Eff,S) :- \+ assignToSubcontractorA_Att(S),\+ assignToSubcontractorB_Att(S),orderMaterial_Sat(S).
+poss(goodQualityB_Eff,S) :- \+ assignToSubcontractorB_Att(S),\+ assignToSubcontractorA_Att(S),orderMaterial_Sat(S).
+poss(badQualityB_Eff,S) :- \+ assignToSubcontractorB_Att(S),\+ assignToSubcontractorA_Att(S),orderMaterial_Sat(S).
 
 
 poss(orderFromSupplierA,S) :- (poss(deliveredInTimeA_Eff,S);poss(neverDeliveredA_Eff,S);poss(deliveredLateA_Eff,S)).
@@ -158,6 +169,9 @@ assignToSubcontractorB_Sat(S) :- goodQualityB_fl(S);badQualityB_fl(S).
 orderMaterial_Sat(S) :- orderFromSupplierA_Sat(S);orderFromSupplierB_Sat(S).
 assignWork_Sat(S) :- assignToSubcontractorA_Sat(S);assignToSubcontractorB_Sat(S).
 buildRoof_Sat(S) :- orderMaterial_Sat(S),assignWork_Sat(S).
+
+
+ % Condition Box Related
 
 %
 % ATTEMPT FORMULAE 
@@ -181,11 +195,39 @@ goalAchieved(S) :- buildRoof_Sat(S).
 % REWARD FORMULAE 
 % 
 
-cost(V,S) :- R .
+cost(V_init,s0) :- getInitValue(cost,V_init),!.
+cost(V,S) :-cost(R_cost_init,s0),
+              val(R_deliveredInTimeA_fl,deliveredInTimeA_fl(S)),
+              val(R_deliveredLateA_fl,deliveredLateA_fl(S)),
+              val(R_neverDeliveredA_fl,neverDeliveredA_fl(S)),
+              val(R_deliveredInTimeB_fl,deliveredInTimeB_fl(S)),
+              val(R_deliveredLateB_fl,deliveredLateB_fl(S)),
+              val(R_neverDeliveredB_fl,neverDeliveredB_fl(S)),
+              val(R_goodQualityB_fl,goodQualityB_fl(S)),
+              val(R_badQualityB_fl,badQualityB_fl(S)),
+              V is R_cost_init +
+((((((((0.5) * (R_deliveredInTimeA_fl)) + ((0.5) * (R_deliveredLateA_fl))) + ((0.5) * (R_neverDeliveredA_fl))) + ((1.0) * (R_deliveredInTimeB_fl))) + ((1.0) * (R_deliveredLateB_fl))) + ((1.0) * (R_neverDeliveredB_fl))) + ((0.5) * (R_goodQualityB_fl))) + ((0.5) * (R_badQualityB_fl)).
 
-overallQuality(V,S) :- R .
 
-reputation(V,S) :- R .
+reputation(V_init,s0) :- getInitValue(reputation,V_init),!.
+reputation(V,S) :-reputation(R_reputation_init,s0),
+                    val(R_deliveredInTimeA_fl,deliveredInTimeA_fl(S)),
+                    val(R_deliveredLateA_fl,deliveredLateA_fl(S)),
+                    val(R_deliveredInTimeB_fl,deliveredInTimeB_fl(S)),
+                    val(R_deliveredLateB_fl,deliveredLateB_fl(S)),
+                    val(R_goodQualityA_fl,goodQualityA_fl(S)),
+                    val(R_goodQualityB_fl,goodQualityB_fl(S)),
+                    V is R_reputation_init +
+((((((1.0) * (R_deliveredInTimeA_fl)) + ((0.7) * (R_deliveredLateA_fl))) + ((1.0) * (R_deliveredInTimeB_fl))) + ((0.7) * (R_deliveredLateB_fl))) + ((1.0) * (R_goodQualityA_fl))) + ((1.0) * (R_goodQualityB_fl)).
+
+
+overallQuality(V_init,s0) :- getInitValue(overallQuality,V_init),!.
+overallQuality(V,S) :- 
+                        cost(R_cost,S),
+                        reputation(R_reputation,S),
+                        V is 
+((0.7) * (R_cost)) + ((0.3) * (R_reputation)).
+
 
 
 rewardInst(R,S) :- overallQuality(R,S).
@@ -235,6 +277,6 @@ restoreSitArg(assignWork_Att,S,assignWork_Att(S)).
 restoreSitArg(buildRoof_Sat,S,buildRoof_Sat(S)).
 restoreSitArg(buildRoof_Att,S,buildRoof_Att(S)).
 restoreSitArg(cost(X),S,cost(X,S)).
-restoreSitArg(overallQuality(X),S,overallQuality(X,S)).
 restoreSitArg(reputation(X),S,reputation(X,S)).
+restoreSitArg(overallQuality(X),S,overallQuality(X,S)).
 

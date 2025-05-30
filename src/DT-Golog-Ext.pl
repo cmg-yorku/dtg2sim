@@ -116,7 +116,8 @@ getRewardRL_(SNum,R) :-
 rewardEpis(R,S) :- \+ goalAchieved(S),
 				R is 0. 
 rewardEpis(R,S) :-  goalAchieved(S),
-				rewardCum(R,S). 
+				%rewardCum(R,S). 
+				rewardInst(R,S). 
 
 %
 % DTGolog Reward
@@ -179,7 +180,8 @@ noActionPossible(S) :- \+ (setof(X, possA(X,S), Bag),length(Bag,X),X > 0).
 
 
 /*
-FindVal(-X,+A,+T)
+DEPRECATED????
+findVal(-X,+A,+T)
 Given an predicate term T, find its value (X) with a list A that contains it unified with that value.
 -X: The value
 +A: The list of instantiated predicates
@@ -190,4 +192,23 @@ findVal(1,[Top|Rest],T) :- functor(Top,T,0),!.
 findVal(X,[Top|Rest],T) :- findVal(X,Rest,T).
 
 
+/*
+getInitVal(+Predicate,-Value)
+Given a predicate/functor +Predicate, find its value Value as it appears in the init list.
+Return 0 if init does not exist or predicate is not in the list.
++Predicate: The Predicate (its functor)
+-Value: The value
+*/
+getInitValue(Predicate,Value):- \+ current_predicate(init/1), Value is 0,!. /* never happening really */
+getInitValue(Predicate,Value):- current_predicate(init/1), init([]), Value is 0,!. 
+getInitValue(Predicate,Value):- current_predicate(init/1), \+ init(_), Value is 0,!. 
+getInitValue(Predicate,Value):- current_predicate(init/1), init(X), getArgVal(Predicate,X,Value).
+
+
+getArgVal(Predicate,[Top|Rest],Value) :- functor(Top,Predicate,1),arg(1,Top,Value),!.
+getArgVal(Predicate,[Top|Rest],Value) :- getArgVal(Predicate,Rest,Value),!.
+getArgVal(Predicate,[],0):-!.
+
+
+initiallyTrue(Predicate):- current_predicate(init/1), init(X), memberchk(Predicate,X). 
 

@@ -1,5 +1,5 @@
 % DT-Golog Specification for Model: Spec 
-% Date Translated: 2025-05-27 19:39:28 
+% Date Translated: 2025-05-27 19:57:30 
 % From source: Spec 
 % Using DTTRanslate 
 :-style_check(-discontiguous).
@@ -18,8 +18,8 @@
 % OPTIONS 
 % 
 
-getNumRuns(1).
-getObsType(discrete).
+getNumRuns(5).
+getObsType(continuous).
 
 
 
@@ -42,13 +42,13 @@ transStateStructure([cost(_),happyCustomer(_)]).
 %
 % D I S C R E T E   E X P O R T S
 %
-discreteExportedSet([deliveredInTimeA_fl,deliveredInTimeB_fl,deliveredLateA_fl,deliveredLateB_fl,neverDeliveredA_fl,neverDeliveredB_fl]).
+discreteExportedSet([]).
 
 
 %
 % C O N T I N U O U S   E X P O R T S
 %
-continuousExportedSet([]).
+continuousExportedSet([[happyCustomer(_),0.0,50.0], [cost(_),0.0,50.0]]).
 
 
 

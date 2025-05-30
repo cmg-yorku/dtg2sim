@@ -5,12 +5,15 @@ import sys
 
 if len(sys.argv) > 1:
     filename = sys.argv[1]
-    print(f"Secification: {filename}")
-    print("Creating dtg2sim, GMEnv, QueryEngine objects c, g, and e")
     e = QueryEngine(filename)
     g = GMEnv(qEng = e)
     c = dtg2sim(g)
+    print(f"\nLoaded Specification: {filename}")
+    print("Access dtg2sim via varibale c, GMEnv via g, and QueryEngine via e.\n")
+    print("To simulate..: c.simulate()")
+    print("To train.....: c.train()")
+    print("To debug.....: g.reset() followed by repeated g.step(agentAction,[stochasticAction]).\n")
+    print("For parameter info: help([dtg2sim or GMEnv].[method])")
     
-
 else:
     print("No filename provided.")
