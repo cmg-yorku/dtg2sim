@@ -84,7 +84,7 @@ For parameter info: help([dtg2sim or GMEnv].[method])
 Follow these directions to simulate or train the spec.
 # See also
 
-The (extended) DT-Golog will typically be the result of a translation from iStarDT-X, an XML based language for representing iStar-DT domains. Please visit the dtx2dtg repository for more information.
+The (extended) DT-Golog will typically be the result of a translation from iStarDT-X, an XML based language for representing iStar-DT domains. Translation is accomplished via the [dtx2X](https://github.com/cmg-yorku/dtx2X) deserializer/validator and the accompanying dtx2dtg translator, both currently found in the [same repository](https://github.com/cmg-yorku/dtx2X).
 # Contact
 
 Please send questions, issues, bugs, and recommendations to [liaskos@yorku.ca](mailto:liaskos@yorku.ca?Subject=RLGen).
