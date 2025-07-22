@@ -9,7 +9,7 @@ if len(sys.argv) > 1:
     g = GMEnv(qEng = e)
     c = dtg2sim(g)
     print(f"\nLoaded Specification: {filename}")
-    print("Access dtg2sim via varibale c, GMEnv via g, and QueryEngine via e.\n")
+    print("Access dtg2sim via variable c, GMEnv via g, and QueryEngine via e.\n")
     print("To simulate..: c.simulate()")
     print("To train.....: c.train()")
     print("To debug.....: g.reset() followed by repeated g.step(agentAction,[stochasticAction]).\n")
