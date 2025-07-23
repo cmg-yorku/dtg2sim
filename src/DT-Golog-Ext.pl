@@ -212,3 +212,23 @@ getArgVal(Predicate,[],0):-!.
 
 initiallyTrue(Predicate):- current_predicate(init/1), init(X), memberchk(Predicate,X). 
 
+
+% binary_list_to_int(+BinaryList, -Int)
+binary_list_to_int(Bits, Int) :-
+    binary_list_to_int(Bits, 0, Int).
+
+% Helper: binary_list_to_int(+Bits, +Acc, -Result)
+binary_list_to_int([], Acc, Acc).
+binary_list_to_int([Bit|Rest], Acc, Result) :-
+    Acc1 is Acc * 2 + Bit,
+    binary_list_to_int(Rest, Acc1, Result).
+	
+	
+% Helper: filter_by_mask(+InputList, +MaskList, -ResultList)
+filter_by_mask([], [], []) :- !.
+filter_by_mask([X|Xs], [1|Ms], [X|Ys]) :-
+    !,
+    filter_by_mask(Xs, Ms, Ys).
+filter_by_mask([_|Xs], [0|Ms], Ys) :-
+    !,
+    filter_by_mask(Xs, Ms, Ys).

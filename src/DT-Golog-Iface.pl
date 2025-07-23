@@ -76,6 +76,8 @@ getState(SNum,Res) :- constructSituation(SNum,S),
 					getStateG(S,Res).
 
 
+getReadableState(SNum,Res):- discreteExportedSet(D),once(getState(SNum,S)),once(filter_by_mask(D,S,Res)).
+
 /*
 getCCState(+SNum,-Res)
 From an indexed situation S returns a list with the value of continuous fluents.
@@ -86,6 +88,38 @@ getCCState(SNum,Res) :- constructSituation(SNum,S),
 						getStateShapeInfo(Fs,_,_),
 						trueCCFluents(Fs,S,ResF),
 						extractValues(ResF,Res).
+
+% Case 1: Non empty run and discrete exported state
+getAllState(SNum,RunNum,Res) :-
+			getNumRuns(Runs), Runs > 1, % Run is part of the state
+			stateSize(D),D > 1, % Non empty discrete state
+			getState(SNum,BinState),binary_list_to_int(BinState,IntState),
+			getCCState(SNum,CState),
+			append([IntState],CState,Res1),
+			append([RunNum],Res1,Res).
+
+% Case 2: Non-empty run, empty discrete exported state
+getAllState(SNum,RunNum,Res) :-
+			getNumRuns(Runs), Runs > 1, % Run is part of the state
+			stateSize(1), % Empty discrete state
+			getCCState(SNum,CState),
+			append([RunNum],CState,Res).
+
+% Case 3: Non-empty run, empty discrete exported state
+getAllState(SNum,RunNum,Res) :-
+			getNumRuns(1), % Not multi-run scenario
+			stateSize(D),D > 1, % Non empty discrete state
+			getState(SNum,BinState),binary_list_to_int(BinState,IntState),
+			getCCState(SNum,CState),
+			append([IntState],CState,Res).
+
+% Case 4: Empty run and discrete exported state
+getAllState(SNum,RunNum,Res) :-
+			getNumRuns(1), % Not multi-run scenario
+			stateSize(1), % Empty discrete state
+			getCCState(SNum,Res),
+			append([IntState],CState,Res).
+
 
 
 /*
@@ -153,7 +187,8 @@ Returns the number of possible states given the number of fluents of interest. U
 */
 %stateSize(S) :- fluentList(Fs), length(Fs,L), S is 2**L.
 %stateSizeBits(L) :- fluentList(Fs), length(Fs,L).
-stateSize(S) :- discreteExportedSet(Fs), length(Fs,L), S is 2**L.
+%stateSize(S) :- discreteExportedSet(Fs), length(Fs,L), S is 2**L.
+stateSize(S) :- stateSizeBits(L), S is 2**L.
 stateSizeBits(L) :- discreteExportedSet(Fs), length(Fs,L).
 
 
@@ -171,6 +206,39 @@ getStateShapeInfo(Terms,Mins,Maxs) :-
 getStateShapeInfo(Terms,Mins,Maxs) :- 
 			continuousExportedSet(X),unwrapStateShapeInfo(X,Terms,Mins,Maxs).
 
+
+getCompleteShapeInfo(Terms,Mins,Maxs):-
+			getNumRuns(Runs),Runs > 1,
+			stateSize(D),D > 1,
+			DSize is D - 1,
+			getStateShapeInfo(Terms2,Mins2,Maxs2),
+			append(["(runs)", "(discreteSpace)"],Terms2,Terms),
+			append([1,0],Mins2,Mins),
+			append([Runs,DSize],Maxs2,Maxs).
+
+getCompleteShapeInfo(Terms,Mins,Maxs):-
+			getNumRuns(1),
+			stateSize(D),D > 1,
+			DSize is D - 1,
+			getStateShapeInfo(Terms2,Mins2,Maxs2),
+			append(["(discreteSpace)"],Terms2,Terms),
+			append([0],Mins2,Mins),
+			append([DSize],Maxs2,Maxs).
+
+
+getCompleteShapeInfo(Terms,Mins,Maxs):-
+			getNumRuns(Runs),Runs > 1,
+			stateSize(1),
+			getStateShapeInfo(Terms2,Mins2,Maxs2),
+			append(["(runs)"],Terms2,Terms),
+			append([1],Mins2,Mins),
+			append([Runs],Maxs2,Maxs).
+
+getCompleteShapeInfo(Terms,Mins,Maxs):-
+			getNumRuns(1),
+			stateSize(1),
+			getStateShapeInfo(Terms,Mins,Maxs).
+			
 
 /*
 achieved(+SNum)

@@ -78,6 +78,16 @@ class QueryEngine(QMI):
         ccState = list(self.prolog.query(query))[0]['State']
         return ccState
 
+    def getAllState(self,eH,run):
+        """
+        [Refer to QMI function documentation.]
+        """
+        query = "getAllState([" + eH + "]," + str(run) + ",State)."
+        allState = list(self.prolog.query(query))[0]['State']
+        return allState
+
+
+
     def done(self,eH):
         """
         [Refer to QMI function documentation.]
@@ -135,6 +145,19 @@ class QueryEngine(QMI):
 
         """
         shapeInfo = list(self.prolog.query("getStateShapeInfo(T,Min,Max)."))[0]
+        return shapeInfo
+
+    def getCompleteShapeInfo(self):
+        """
+        Returns the shape info of any kinds of state state.
+
+        Returns
+        -------
+        shapeInfo : A list containing three lists.
+            The first is the list of terms designated for state representation, and the second and third the minimum and maximum values of each of these terms.
+
+        """
+        shapeInfo = list(self.prolog.query("getCompleteShapeInfo(T,Min,Max)."))[0]
         return shapeInfo
  
     def achieved(self,eH):

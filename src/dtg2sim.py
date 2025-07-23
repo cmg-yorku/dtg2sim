@@ -40,7 +40,7 @@ class dtg2sim():
         self.env.closeQE()
 
     def performAction(self,action,choice = -1):
-        n_state, reward, done, info = self.env.step(action, choice)
+        n_state, reward, done,_ , info = self.env.step(action, choice)
         self.score += reward
         
         if self.debug:
@@ -55,7 +55,7 @@ class dtg2sim():
         return(n_state,reward,self.score,done,info)
 
         
-    def simulate(self,episodes = 1_000,policy = [],debug = False, forgivePenalty = True):
+    def simulate(self, episodes = 1_000, policy=None, debug = False, forgivePenalty = True):
         """
         Performs a fixed number of simulation runs.
 
@@ -83,6 +83,8 @@ class dtg2sim():
         Returns:
             float: The average reward.
         """
+        if policy is None:
+            policy = []
         totalScore = 0
         if policy:  
             print("Starting simulations on extraneously defined policy:")
@@ -111,7 +113,7 @@ class dtg2sim():
                     print("     State: {}".format(n_state))
                     print("     Episode done: {}".format(done))
 
-                n_state, reward, done, info = self.env.step(action)
+                n_state, reward, done, _ , info = self.env.step(action)
                 
                 if (reward != self.env.getInfeasiblePenalty()) or (not forgivePenalty):
                     self.score = reward

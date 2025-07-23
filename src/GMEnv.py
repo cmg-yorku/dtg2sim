@@ -5,14 +5,14 @@ Created on Fri Jun  3 14:55:13 2022
 @author: Anonymous
 """
 
-from gym import Env
-from gym.spaces import Discrete, Box
+from gymnasium import Env
+from gymnasium.spaces import Discrete, Box
 import numpy as np
 from src.QueryEngine import QueryEngine
 
 class GMEnv(Env):
 
-    def __init__(self,qEng=None,file=None):
+    def __init__(self, qEng=None, file=None):
       if qEng is None:
         if file is None:
           raise ValueError("Either 'qEng' or 'file' must be provided.")
@@ -21,8 +21,6 @@ class GMEnv(Env):
       else:
         self.qmi = qEng
 
-
-        
        
         # Consider the following goal model:
         # Root
@@ -41,14 +39,14 @@ class GMEnv(Env):
 
         # tH: List of lists of agent actions that have been performed. Each list corresponds to a signle run.
         # e.g. [[]], [[1]], [[0,3],[]] or [[0,3],[1]], 
-        self.tH = [[]];
+        self.tH = [[]]
                 
         # eH: List of of lists of nature actions that have been performed
         # e.g. [[]], [[3]], [[3,7],[]],  [[3,7],[2]] (consistent with above)
-        self.eH = [[]];
+        self.eH = [[]]
 
         # The list of possible *agent* actions at the current state.
-        self.possAgentActions = [];
+        self.possAgentActions = []
         
         # A binary list of lists in which every position represents a fluent.
         # It is 1 if the fluent is true, 0 otherwise
@@ -56,20 +54,23 @@ class GMEnv(Env):
         # [0,0,0,1,0,0,0,0],[0,0,0,0,0,0,0,0]],
         # [[0,0,0,1,0,0,0,1],[0,0,0,0,0,0,0,0]]  
         # [[0,0,0,1,0,0,0,1],[0,0,1,0,0,0,0,0]] (consistent with above - 2 run problem)
-        self.bitState = [[]]; # To be revised/initialized below.
+        self.bitState = [[]] # To be revised/initialized below.
     
         # A float array with the values of all continuous variables
-        self.ccState = []; # To be revised/initialized below.
+        self.ccState = [] # To be revised/initialized below.
+
+        # A list of floats combining both discrete and continuous state
+        self.allState = []
 
         # The goal run currently in progress (from zero to runNo-1)
-        self.run = 0;
+        self.run = 0
 
         # The accrued reward of the current episode
-        self.reward = 0;
+        self.reward = 0
         
         # The amount of penalty to apply if the agent tries an 
         # infeasible action.
-        self.inFeasiblePenalty = self.qmi.getInfeasibleActionPenalty();
+        self.inFeasiblePenalty = self.qmi.getInfeasibleActionPenalty()
 
 
         # Should the episode be terminared when infeasible action is tried?
@@ -100,7 +101,8 @@ class GMEnv(Env):
         
         # O B S E R V A T I O N     S P A C E
         if (self.obsType == "continuous"):
-            shapeInfo = self.qmi.getStateShapeInfo()
+            # shapeInfo = self.qmi.getStateShapeInfo()
+            shapeInfo = self.qmi.getCompleteShapeInfo()
             self.obsMins = shapeInfo['Min']
             self.obsMaxs = shapeInfo['Max']
             self.observation_space = Box(
@@ -111,31 +113,33 @@ class GMEnv(Env):
             self.observation_space = Discrete(self.stateSize)
             self.obsMins = -1
             self.obsMaxs = -1
-        
-    def reset(self):
+
+    def reset(self, seed = None, options = None):
         # Reset the episode
-        self.eH = [[]];
-        self.tH = [[]];
-        self.bitState = self.initBitState.copy();
+        super().reset(seed = None)
+        self.eH = [[]]
+        self.tH = [[]]
+        self.bitState = self.initBitState.copy()
         self.qmi.setTransState(self.initTransState)
         self.terminateEpisode = False
-        self.run = 0;
-        self.reward = 0;
-        
-        if (self.obsType == "discrete"):
+        self.run = 0
+        self.reward = 0
+
+        if self.obsType == "discrete":
             newState = self.constructStateInt(self.bitState)
         else:
-            newState = self.qmi.getConState(self.eHString())
-        
-        return (newState)
+            # newState = self.qmi.getConState(self.eHString())
+            newState = self.qmi.getAllState(self.eHString(),self.run)
+
+        return newState, None
 
     def possible(self,action):
         # If the episode is done, accept no more actions
         if (self.done()):
-            return(False)
+            return False
         # If the action has been attempted before, no.
         if (action in self.tH[self.run]):
-            return (False)
+            return False
         else:
             # Check if the action is possible in this run
             return (self.qmi.possibleAt(action, self.eHString()))
@@ -177,13 +181,13 @@ class GMEnv(Env):
         """
         stAction = -1
 
-        if (self.possible(action)):
+        if self.possible(action):
             # Get the outcomes and probabilities (stochastic actions) of the agent action
             #realAction = self.getCopy(action)
             possStochActions, probs = self.qmi.getOutcomes(action,self.eHString())
             
             # Pick one of the choices according to the probability
-            if (choice == -1):
+            if choice == -1:
                 stAction = np.random.choice(possStochActions,1,p=probs)[0]
             else:
                 stAction = choice
@@ -209,8 +213,9 @@ class GMEnv(Env):
             if (self.episodeTerminationPolicyOn):
                 self.terminateEpisode = True
             
-        if (self.obsType == "continuous"):
-            newState = self.qmi.getConState(self.eHString())
+        if self.obsType == "continuous":
+            # newState = self.qmi.getConState(self.eHString())
+            newState = self.qmi.getAllState(self.eHString(),self.run)
         
         if (self.runConcluded()):
             if (self.run <= self.runsNum - 1):
@@ -218,8 +223,7 @@ class GMEnv(Env):
             
         if (self.obsType == "discrete"):
             newState = self.constructStateInt(self.bitState)
-        #else:
-        #    newState = self.qmi.getConState(self.eHString())
+
 
 
         inf = {"stAction":stAction,
@@ -249,7 +253,7 @@ class GMEnv(Env):
             print('--> TransState: {}'.format(inf['TransState']))
             #print("--> Initial state {}".format(self.initBitState))
         
-        return newState, self.reward, self.done(), inf
+        return newState, self.reward, self.done(), False, inf
 
     def done(self):
         assert(self.run <= self.runsNum)
@@ -281,12 +285,14 @@ class GMEnv(Env):
     def setSeed(self,newSeed):
         np.random.seed(newSeed)
         
-    def bitToNum(self,l = []):
+    def bitToNum(self, l = None):
         # binary list to integer conversion
+        if l is None:
+            l = []
         result = 0
         for digits in l:
             result = (result << 1) | digits
-        return(result)
+        return result
 
     # Returns eH of the latest run in form of a string (for Prolog interfacing).
     def eHString(self):
@@ -304,7 +310,6 @@ class GMEnv(Env):
     def flatten(self,l):
         return [item for sublist in l for item in sublist]
 
-
     def runConcluded(self):
         #return (self.achieved())
         return self.qmi.runDone(self.eHString())
@@ -316,8 +321,7 @@ class GMEnv(Env):
         self.run = self.run + 1
         self.tH.append([])
         self.eH.append([])
-        
-        
+
     def closeQE(self):
         self.qmi.close()
 
@@ -342,7 +346,6 @@ class GMEnv(Env):
         print('**** ** Episode Done: {}'.format(self.episodeDone()))
         print('**** ** Root Achieved: {}'.format(self.achieved()))
         print('**** ** More Actions Possible: {}'.format(self.anyActionPossible()))
-
 
     def setDebug(self,status):
         self.debug = status
