@@ -16,6 +16,7 @@ import time
 
 class dtg2sim():
     def __init__(self,environment=None,spec=None):
+
       if environment is None:
         if spec is None:
           raise ValueError("Either 'environment' or 'domainFile' must be provided.")
@@ -23,6 +24,8 @@ class dtg2sim():
           self.env = GMEnv(spec)
       else:
         self.env = environment
+
+      self.vec_env = None
       self.score = 0
       self.debug = False
 
@@ -90,12 +93,16 @@ class dtg2sim():
             print("Starting simulations on extraneously defined policy:")
         else:
             print("Starting random simulations:")
+
+        skippedEpisodes = 0
+        totalScoreWPenalties = 0
         for episode in range(1,episodes + 1):
             sys.stdout.write("\r\t%d%%" % ((episode/episodes)*100))
             sys.stdout.flush()
             self.env.reset()
             done = False
             self.score = 0
+            scoreWPenalties = 0
             pol = policy.copy()
             
             while not done:
@@ -114,10 +121,15 @@ class dtg2sim():
                     print("     Episode done: {}".format(done))
 
                 n_state, reward, done, _ , info = self.env.step(action)
-                
+
+                scoreWPenalties += reward
+
                 if (reward != self.env.getInfeasiblePenalty()) or (not forgivePenalty):
-                    self.score = reward
-                    
+                    self.score += reward
+                else:
+                    skippedEpisodes += 1
+                    self.score = 0
+
                 if self.debug: 
                     print(' ')
                     print('New Action Attempt:')
@@ -130,26 +142,29 @@ class dtg2sim():
 
                 if (policy and (not pol) and (not done)):
                     print("**** Error: Failed to end deterministic policy ***")
-            
+                if done and self.debug:
+                    print(f"**** Episode {info['eH']} done with reward: {reward} and final state {n_state}")
+
             totalScore += self.score
+            totalScoreWPenalties += scoreWPenalties
             if debug:
                 print('Episode:{} Score:{}'.format(episode,self.score))
         #print('Simulation: average reward: {}'.format(totalScore/episodes))
         print("")
         print("Simulations complete.")
-        print("Average Reward: {}".format(totalScore/episodes))
-        return(totalScore/episodes)
+        print("Average Reward                       : {}".format(totalScore/(episodes - skippedEpisodes)))
+        print("Average Reward (including penalties) : {}".format(totalScoreWPenalties/episodes))
+        print("Skipped deadlock episodes            : {}".format(skippedEpisodes))
+        return totalScore/(episodes - skippedEpisodes)
 
-
-    def train(self, learn_iter = 1_000, test_iter = 1_000,logging = 1_000, algo = "A2C"):
+    def train(self, learn_iter = 1_000, logging = 1_000, algo = "A2C"):
         """
         Trains an RL agent against the specification
 
         Parameters:
-            learn_iter (int) : The number of learing iterations (deafult is 1,000).
-            test_iter (int)  : The number of testing iterations (deafult is 1,000).
-            logging (int)    : How often to log (deafult is 1,000).
-            algo (String)    : One of "A2C" (default), "PPO", "DQN".
+            learn_iter (int) : The number of learning iterations (default is 1,000).
+            logging (int)    : How often to log (default is 1,000).
+            algo (str)    : One of "A2C" (default), "PPO", "DQN".
             
         Returns:
             float: The average reward.
@@ -157,37 +172,56 @@ class dtg2sim():
         st = time.process_time()
         print("Attempting {} model construction.".format(algo))
         
-        if (algo == "A2C"):
+        if algo == "A2C":
             self.envm = Monitor(self.env,info_keywords=("is_success",))
             self.model = A2C("MlpPolicy", self.envm, verbose=1)
             print("Model Constructed. Learning starts...")
             self.model.learn(total_timesteps=learn_iter,log_interval = logging)
-        elif (algo == "DQN"):
+        elif algo == "DQN":
             self.envm = Monitor(self.env,info_keywords=("is_success",))
             self.model = DQN("MlpPolicy", self.envm, verbose=1)
             print("Model Constructed. Learning starts...")
             self.model.learn(total_timesteps=learn_iter,log_interval = logging)
-        elif (algo == "PPO"):
+        elif algo == "PPO":
             self.envm = Monitor(self.env,info_keywords=("is_success",))
             self.model = PPO("MlpPolicy", self.envm, verbose=1)
             print("Model Constructed. Learning starts...")
             self.model.learn(total_timesteps=learn_iter,log_interval = logging)
         else:
-            print("Uknown learning algorithm")
-            return
+            print("Unknown learning algorithm")
+            return -1
         self.vec_env = self.model.get_env()
         obs = self.vec_env.reset()
         params = self.model.get_parameters().get("policy.optimizer").get("param_groups")
-        
-        totalReward = 0
-        totalRewardwPenalty = 0
-        totalIter = test_iter
-        
+
         # Time
         et = time.process_time()
         res = et - st
-        print('Learning Complete. Leargning CPU Execution time:', res, 'seconds')
-        print("Starting testing..")
+        print('Learning Complete.')
+        print('Learning CPU Execution time:', res, 'seconds')
+        print('Use test() to test.')
+
+        return params
+
+    def test(self, test_iter = 1_000):
+        """
+        Tests trained an RL agent against the specification
+
+        Parameters:
+            test_iter (int) : The number of testing iterations (default is 1,000).
+        Returns:
+            float: The average reward.
+        """
+        totalReward = 0
+        totalRewardwPenalty = 0
+        skippedEpisodes = 0
+        totalIter = test_iter
+
+        if self.vec_env is None:
+            print("No trained environment to test")
+            return -1
+
+        print("Testing starts...")
         for i in range(totalIter):
             sys.stdout.write("\r\t%d%%" % ((i/totalIter)*100))
             sys.stdout.flush()
@@ -197,22 +231,28 @@ class dtg2sim():
             while (not(episodeDone)):
                 action, _state = self.model.predict(obs, deterministic=True)
                 obs, reward, done, info = self.vec_env.step(action)
-                episodeReward = reward[0]
+                episodeReward += reward[0]
                 episodeDone = done[0]
                 
             totalRewardwPenalty  = totalRewardwPenalty + episodeReward
-            if (info[0]['is_success']):
-              totalReward  = totalReward + episodeReward
+            if info[0]['is_success']:
+                totalReward  = totalReward + episodeReward
+            else:
+                skippedEpisodes += 1
             
-            # print("Episode {} Reward: {}".format(i,episodeReward))
+
         print("")
-        print("Learning simulations complete.")
-        result = totalReward/totalIter
+        print("Testing Complete.")
+        if totalIter-skippedEpisodes != 0:
+            result = totalReward/(totalIter-skippedEpisodes)
+        else:
+            result = 'N/A'
         resultwp = totalRewardwPenalty/totalIter
         
-        print("Average Reward: {}".format(result))
-        print("Average Reward (including penalties): {}".format(resultwp))
-        return result, params
+        print("Average Reward                       : {}".format(result))
+        print("Average Reward (including penalties) : {}".format(resultwp))
+        print("Skipped Episodes (deadlocks)         : {}".format(skippedEpisodes))
+        return result
       
     def getModel(self):
         return(self.model)

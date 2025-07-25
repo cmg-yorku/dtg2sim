@@ -13,6 +13,7 @@ from src.QueryEngine import QueryEngine
 class GMEnv(Env):
 
     def __init__(self, qEng=None, file=None):
+
       if qEng is None:
         if file is None:
           raise ValueError("Either 'qEng' or 'file' must be provided.")
@@ -45,9 +46,6 @@ class GMEnv(Env):
         # e.g. [[]], [[3]], [[3,7],[]],  [[3,7],[2]] (consistent with above)
         self.eH = [[]]
 
-        # The list of possible *agent* actions at the current state.
-        self.possAgentActions = []
-        
         # A binary list of lists in which every position represents a fluent.
         # It is 1 if the fluent is true, 0 otherwise
         # e.g., [0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]], 
@@ -62,22 +60,27 @@ class GMEnv(Env):
         # A list of floats combining both discrete and continuous state
         self.allState = []
 
+        # As above, to store the result of a step
+        self.newState = None
+
         # The goal run currently in progress (from zero to runNo-1)
         self.run = 0
 
         # The accrued reward of the current episode
         self.reward = 0
-        
+
+        # Previous state of the accrued reward
+        self.reward_pre = 0
+
         # The amount of penalty to apply if the agent tries an 
         # infeasible action.
         self.inFeasiblePenalty = self.qmi.getInfeasibleActionPenalty()
 
-
-        # Should the episode be terminared when infeasible action is tried?
+        # Should the episode be terminated when infeasible action is tried?
         self.episodeTerminationPolicyOn = True #NOT to be tweaked
         self.terminateEpisode = False #is the current episode to be terminated?
 
-        # Keep the hard-coded initial state for resetting.
+        # Keep the hard-coded trans (cross-run) state for resetting.
         self.initTransState = self.qmi.getTransState(self.eHString())
 
         # Set the default seed for np.
@@ -88,28 +91,21 @@ class GMEnv(Env):
         
         # Obtain domain parameters from Query Engine
         self.actionSize, self.stateSize, self.initBitState, self.obsType, self.runsNum = self.qmi.getDomainParams()
-        # print("Building environment:")
-        # print("--> actionSize: {}".format(self.actionSize))
-        # print("--> stateSize: {}".format(self.stateSize))
-        # print("--> initBitState: {}".format(self.initBitState))
-        # print("--> obsType: {}".format(self.obsType))
-        # print("--> runs: {}".format(self.runsNum))
         self.bitState = self.initBitState.copy()
 
         #  A C T I O N    S P A C E 
         self.action_space = Discrete(self.actionSize)     
         
         # O B S E R V A T I O N     S P A C E
-        if (self.obsType == "continuous"):
-            # shapeInfo = self.qmi.getStateShapeInfo()
-            shapeInfo = self.qmi.getCompleteShapeInfo()
+        if self.obsType == "continuous":
+            shapeInfo = self.qmi.getStateShapeInfo()
             self.obsMins = shapeInfo['Min']
             self.obsMaxs = shapeInfo['Max']
             self.observation_space = Box(
                                     low = np.array(self.obsMins),
                                     high = np.array(self.obsMaxs)
                                     )
-        else: # Discrete space envioronments don't have shape info.
+        else: # OBSOLETE
             self.observation_space = Discrete(self.stateSize)
             self.obsMins = -1
             self.obsMaxs = -1
@@ -124,25 +120,21 @@ class GMEnv(Env):
         self.terminateEpisode = False
         self.run = 0
         self.reward = 0
+        self.reward_pre = 0
+        self.newState = self.qmi.getAllState(self.eHString(),self.run)
 
-        if self.obsType == "discrete":
-            newState = self.constructStateInt(self.bitState)
-        else:
-            # newState = self.qmi.getConState(self.eHString())
-            newState = self.qmi.getAllState(self.eHString(),self.run)
-
-        return newState, None
+        return self.newState, None
 
     def possible(self,action):
         # If the episode is done, accept no more actions
-        if (self.done()):
+        if self.done():
             return False
         # If the action has been attempted before, no.
-        if (action in self.tH[self.run]):
+        if action in self.tH[self.run]:
             return False
         else:
             # Check if the action is possible in this run
-            return (self.qmi.possibleAt(action, self.eHString()))
+            return self.qmi.possibleAt(action, self.eHString())
 
     def step(self, action, choice = -1):
         """
@@ -191,96 +183,80 @@ class GMEnv(Env):
                 stAction = np.random.choice(possStochActions,1,p=probs)[0]
             else:
                 stAction = choice
-            #print("--> Chose Action: {} (choice was {})".format(stAction,choice))
             # Append both the agent and the stochastic action to the list
             # of performed actions for the run
             self.tH[self.run].append(action)
             self.eH[self.run].append(stAction)
-            #print("--> Acquiring reward for: {}".format(self.eHString()))
-            #print('--> State List: {}'.format(self.bitState))
-            #print('--> History: {}'.format(self.tH))
-            #print('--> Situation: {}'.format(self.eH))
-            
-            # if (self.qmi.done(self.eHString()) and not self.achieved()):
-            #     self.reward = self.inFeasiblePenalty
-            # else:
-            self.reward = self.qmi.reward(self.eHString())
-                
+
+            # Calculate incremental reward
+            self.reward = self.qmi.reward(self.eHString()) - self.reward_pre
+            self.reward_pre = self.qmi.reward(self.eHString())
+
             self.bitState[self.run] = self.qmi.getState(self.eHString())
                 
         else: # The action is not possible
             self.reward = self.inFeasiblePenalty
-            if (self.episodeTerminationPolicyOn):
+            if self.episodeTerminationPolicyOn:
                 self.terminateEpisode = True
-            
-        if self.obsType == "continuous":
-            # newState = self.qmi.getConState(self.eHString())
-            newState = self.qmi.getAllState(self.eHString(),self.run)
+
+        self.newState = self.qmi.getAllState(self.eHString(),self.run)
         
-        if (self.runConcluded()):
-            if (self.run <= self.runsNum - 1):
+        if self.runConcluded():
+            if self.run <= self.runsNum - 1:
                 self.advanceRun()    
             
-        if (self.obsType == "discrete"):
-            newState = self.constructStateInt(self.bitState)
+        if self.obsType == "discrete": # OBSOLETE!
+            self.newState = self.constructStateInt(self.bitState)
 
-
-
-        inf = {"stAction":stAction,
-               "bitState":self.bitState,
-               "tH":self.tH,
-               "eH":self.eH,
-               "Run":self.run,
-               "Achieved":self.achieved(),
+        inf = {"stAction": stAction,
+               "bitState": self.bitState,
+               "allState": self.newState,
+               "tH": self.tH,
+               "eH": self.eH,
+               "Run": self.run,
+               "Root achieved": self.achieved(),
+               "Episode Done": self.done(),
+               "Terminate Episode": self.terminateEpisode,
                "TransState": self.qmi.getTransState(self.eHString()),
-               "Episode Done":self.done(),
-               "is_success": ((self.run == self.runsNum))
+               "is_success": (self.run == self.runsNum)
                }
-               
 
-        if (self.debug):
+        if self.debug:
             print(' ')
             print('New Action Attempt:')
-            print('--> Action: {}'.format(action))
-            print('--> St. Action: {}'.format(stAction))
-            print('--> State Num: {}'.format(newState))
-            print('--> State List: {}'.format(self.bitState))
-            print('--> History: {}'.format(self.tH))
-            print('--> Situation: {}'.format(self.eH))
-            print('--> Run: {}'.format(self.run))
-            print('--> Reward: {}'.format(self.reward))
-            print('--> Episode Done: {}'.format(self.done()))
-            print('--> TransState: {}'.format(inf['TransState']))
-            #print("--> Initial state {}".format(self.initBitState))
+            for key, value in inf.items():
+                print(f"--> {key}: {value}")
         
-        return newState, self.reward, self.done(), False, inf
+        return self.newState, self.reward, self.done(), False, inf
 
     def done(self):
         assert(self.run <= self.runsNum)
-        #print("Run {} for {} is done? {}".format(self.run,self.eHString(),self.qmi.done(self.eHString())))
-        return (self.qmi.done(self.eHString()) or (self.run == self.runsNum) or self.terminateEpisode)
+        # DO NOT TOUCH BELOW
+        return self.qmi.done(self.eHString()) or (self.run == self.runsNum) or self.terminateEpisode
 
-    def runDone(self):
-        return (self.qmi.runDone(self.eHString()))
+    def runConcluded(self):
+        return self.qmi.runDone(self.eHString())
+
+    def achieved(self):
+        return self.qmi.achieved(self.eHString())
 
     def render(self):
         # Visualization not implemented
         pass
 
-    def achieved(self):
-        return self.qmi.achieved(self.eHString())
+    def advanceRun(self):
+        # Grab trans values from the latest eH state and assert them to the new
+        #print("Copying Transstate {}".format(self.qmi.getTransState(self.eHString())))
+        self.qmi.setTransState(self.qmi.getTransState(self.eHString()))
+        self.run = self.run + 1
+        self.tH.append([])
+        self.eH.append([])
 
-    # Construct State Integer from bitState, run and stateSize
-    def constructStateInt(self, bS):
-        return (self.bitToNum(self.flatten(bS)))
     
     
     #
     # M I S C    H E L P E R S
     #
-
-    def setImpossibleActionPenalty(self,penalty):
-        self.inFeasiblePenalty = penalty
 
     def setSeed(self,newSeed):
         np.random.seed(newSeed)
@@ -298,7 +274,7 @@ class GMEnv(Env):
     def eHString(self):
         eHstr = [str(x) for x in self.eH[self.run]]
         eHstr = ",".join(eHstr)
-        return(eHstr)
+        return eHstr
 
     def getCopy(self,action):
         realAction = action + self.run*self.actionSize
@@ -307,20 +283,15 @@ class GMEnv(Env):
     def getInfeasiblePenalty(self):
         return self.qmi.getInfeasibleActionPenalty()
 
+    def setImpossibleActionPenalty(self,penalty):
+        self.inFeasiblePenalty = penalty
+
     def flatten(self,l):
         return [item for sublist in l for item in sublist]
 
-    def runConcluded(self):
-        #return (self.achieved())
-        return self.qmi.runDone(self.eHString())
-    
-    def advanceRun(self):
-        # Grab trans values from the latest eH state and assert them to the new
-        #print("Copying Transstate {}".format(self.qmi.getTransState(self.eHString())))
-        self.qmi.setTransState(self.qmi.getTransState(self.eHString()))
-        self.run = self.run + 1
-        self.tH.append([])
-        self.eH.append([])
+    # Construct State Integer from bitState, run and stateSize
+    def constructStateInt(self, bS):
+        return self.bitToNum(self.flatten(bS))
 
     def closeQE(self):
         self.qmi.close()
@@ -329,23 +300,26 @@ class GMEnv(Env):
     #
     # D E B U G    R E L A T E D
     #
+    def get_possible_actions(self):
+        possible_actions = []
+        for action in range(self.actionSize):
+            if self.possible(action):
+                possible_actions.append(action)
+        return possible_actions
 
-    def getDebug(self):
-        return(self.eH, self.tH, self.possAgentActions, self.bitState)    
-   
+
     def printDebug(self):
-        deH, dtH, dpossA, dbitState = self.getDebug()
-        print("**** ** tH: {}".format(dtH))
-        print("**** ** eH: {}".format(deH))
+        print("**** ** tH: {}".format(self.tH))
+        print("**** ** eH: {}".format(self.eH))
         print("**** ** Actual eH: {}".format(self.eHString()))
-        print("**** ** Poss: {}".format(dpossA))
-        print("**** ** State: {}".format(dbitState))
+        print("**** ** Poss: {}".format(self.get_possible_actions()))
+        print("**** ** Curr State: {}".format(self.newState))
+        print("**** ** Bit State: {}".format(self.bitState))
         print('**** ** Run: {}'.format(self.run))
         print('**** ** Reward: {}'.format(self.reward))
-        print('**** ** Episode Done: {}'.format(self.runDone()))
-        print('**** ** Episode Done: {}'.format(self.episodeDone()))
+        print('**** ** Run Concluded: {}'.format(self.runConcluded()))
+        print('**** ** No Action Possible: {}'.format(self.done()))
         print('**** ** Root Achieved: {}'.format(self.achieved()))
-        print('**** ** More Actions Possible: {}'.format(self.anyActionPossible()))
 
     def setDebug(self,status):
         self.debug = status

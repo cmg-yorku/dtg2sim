@@ -27,7 +27,6 @@ unwrapStateShapeInfo([Top|Rest],[TopTerm|RestTerm],[TopMin|RestMin],[TopMax|Rest
 							nth0(2,Top,TopMax).
 
 
-
 /* C O N T I N U O U S   S T A T E */
 
 
@@ -42,8 +41,6 @@ extractValues([],[]).
 extractValues([Top|Fs],[TopRes|Res]) :- 
 		extractValues(Fs,Res),
 		arg(1,Top,TopRes).
-
-
 
 
 /* D I S C R E T E   S T A T E */
@@ -90,17 +87,12 @@ getRewardRL(+SNum,-R).
 +SNum: a list of indexes of stochastic actions, represneting the current situation.
 */
 getRewardRL_(SNum,R) :- 
-		getRewardMode(episodic),
+		getRewardMode(episodic),!,
 		constructSituation(SNum,S),
-		reward(R,S).
+		rewardEpis(R,S).
 		
-getRewardRL_(SNum,R) :- 
-		getRewardMode(cummulative),
-		constructSituation(SNum,S),
-		rewardCum(R,S).
-		
-getRewardRL_(SNum,R) :- 
-		getRewardMode(instant),
+getRewardRL_(SNum,R) :- !,
+		getRewardMode(instant),!,
 		constructSituation(SNum,S),
 		rewardInst(R,S).
 		
@@ -113,25 +105,36 @@ getRewardRL_(SNum,R) :-
 %
 % Episodic reward: cummulative at the end of the episode
 %
-rewardEpis(R,S) :- \+ goalAchieved(S),
+rewardEpis(R,S) :- \+ goalAchieved(S),\+ deadlock(S),!,
 				R is 0. 
-rewardEpis(R,S) :-  goalAchieved(S),
-				%rewardCum(R,S). 
-				rewardInst(R,S). 
+rewardEpis(R,S) :- rewardInst(R,S). 
 
 %
 % DTGolog Reward
 %
 
-reward(R,S) :- penalizeDeadlock(1), deadlock(S), deadlockPenalty(R).
+%reward(R,S) :- penalizeDeadlock(1), deadlock(S), deadlockPenalty(R).
 
+dt_reward(R,S) :- getRewardModeDTG(instant),!,
+				rewardInst(R,S).
+dt_reward(R,S) :- getRewardModeDTG(episodic),!,
+				rewardEpis(R,S).				
+
+
+reward(R,S) :- deadlock(S),current_predicate(deadlockPenalty/1),!,
+				deadlockPenalty(Pen),
+				dt_reward(R1,S),
+				R is R1+Pen.
+reward(R,S) :- dt_reward(R,S).
+
+/*
 reward(R,S) :- \+ (penalizeDeadlock(1), deadlock(S), deadlockPenalty(R)),
 				getRewardModeDTG(instant),
 				rewardInst(R,S).
 reward(R,S) :- \+ (penalizeDeadlock(1), deadlock(S), deadlockPenalty(R)),
 				getRewardModeDTG(episodic),
 				rewardEpis(R,S).				
-
+*/
 
 
 /* 
@@ -187,9 +190,9 @@ Given an predicate term T, find its value (X) with a list A that contains it uni
 +A: The list of instantiated predicates
 +T: The predicate name we are interested in.
 */
-findVal(X,[Top|Rest],T) :- functor(Top,T,1),arg(1,Top,X),!.
+/* findVal(X,[Top|Rest],T) :- functor(Top,T,1),arg(1,Top,X),!.
 findVal(1,[Top|Rest],T) :- functor(Top,T,0),!.
-findVal(X,[Top|Rest],T) :- findVal(X,Rest,T).
+findVal(X,[Top|Rest],T) :- findVal(X,Rest,T).*/
 
 
 /*
@@ -224,7 +227,7 @@ binary_list_to_int([Bit|Rest], Acc, Result) :-
     binary_list_to_int(Rest, Acc1, Result).
 	
 	
-% Helper: filter_by_mask(+InputList, +MaskList, -ResultList)
+% filter_by_mask(+InputList, +MaskList, -ResultList)
 filter_by_mask([], [], []) :- !.
 filter_by_mask([X|Xs], [1|Ms], [X|Ys]) :-
     !,
@@ -232,3 +235,20 @@ filter_by_mask([X|Xs], [1|Ms], [X|Ys]) :-
 filter_by_mask([_|Xs], [0|Ms], Ys) :-
     !,
     filter_by_mask(Xs, Ms, Ys).
+	
+	
+% items_at_indexes(+List, +Indexes, -Sublist)
+% Sublist is a subset of List that match the indexes in Indexes 
+items_at_indexes(_, [], []) :- !.
+items_at_indexes(List, [I|Is], [X|Xs]) :-
+    nth0(I, List, X),
+    items_at_indexes(List, Is, Xs).
+	
+	
+/*
+val(-Value,+Pred)
+Value is 1 if Pred is satisfied, 0 otherwise
++Pred: an predicate (a fluent in our case).
+*/
+val(1, Pred) :- call(Pred), !.
+val(0, _).
