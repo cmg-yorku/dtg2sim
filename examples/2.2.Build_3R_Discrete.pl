@@ -1,12 +1,11 @@
 % DT-Golog Specification for Model: Spec 
-% Date Translated: 2025-07-23 17:45:18 
+% Date Translated: TEST 
 % From source: Spec 
 % Using DTTRanslate 
 :-style_check(-discontiguous).
 :-style_check(-singleton).
 :- multifile getRewardMode/1.
 :- multifile getRewardModeDTG/1.
-:- multifile penalizeDeadlock/1.
 :- multifile deadlockPenalty/1.
 :- multifile getInfeasiblePenalty/1.
 :- multifile val/2.
@@ -18,7 +17,7 @@
 % OPTIONS 
 % 
 
-getNumRuns(1).
+getNumRuns(3).
 getObsType(continuous).
 
 
@@ -42,7 +41,7 @@ transStateStructure([cost(_),reputation(_)]).
 %
 % D I S C R E T E   E X P O R T S
 %
-discreteExportedSet([deliveredInTimeA_fl,deliveredInTimeB_fl,deliveredLateA_fl,deliveredLateB_fl,neverDeliveredA_fl,neverDeliveredB_fl,goodQualityA_fl,goodQualityB_fl,badQualityA_fl,badQualityB_fl]).
+discreteExportedSet([orderFromSupplierA_Sat,orderFromSupplierB_Sat,assignToSubcontractorA_Sat,assignToSubcontractorB_Sat]).
 
 
 %
@@ -111,9 +110,12 @@ prob(badQualityB_Eff,0.5,_).
 proc(orderMaterial, orderFromSupplierA # orderFromSupplierB).
 proc(assignWork, assignToSubcontractorA # assignToSubcontractorB).
 proc(buildRoof, orderMaterial : assignWork).
+proc(buildRoof, assignWork : orderMaterial).
 dtgRun :- write('Policy: '), bp(buildRoof,10,_,U,P,x),nl,
         write('Utility: '),writeln(U), 
         write('Probability: '),writeln(P).
+dtgRun(L,U,P) :-  with_output_to(string(_),bp(buildRoof,10,L,U,P,x)).
+
 
 
 %
@@ -147,10 +149,10 @@ poss(deliveredLateA_Eff,S) :- \+ orderFromSupplierA_Att(S),\+ orderFromSupplierB
 poss(deliveredInTimeB_Eff,S) :- \+ orderFromSupplierB_Att(S),\+ orderFromSupplierA_Att(S).
 poss(neverDeliveredB_Eff,S) :- \+ orderFromSupplierB_Att(S),\+ orderFromSupplierA_Att(S).
 poss(deliveredLateB_Eff,S) :- \+ orderFromSupplierB_Att(S),\+ orderFromSupplierA_Att(S).
-poss(goodQualityA_Eff,S) :- \+ assignToSubcontractorA_Att(S),\+ assignToSubcontractorB_Att(S).
-poss(badQualityA_Eff,S) :- \+ assignToSubcontractorA_Att(S),\+ assignToSubcontractorB_Att(S).
-poss(goodQualityB_Eff,S) :- \+ assignToSubcontractorB_Att(S),\+ assignToSubcontractorA_Att(S).
-poss(badQualityB_Eff,S) :- \+ assignToSubcontractorB_Att(S),\+ assignToSubcontractorA_Att(S).
+poss(goodQualityA_Eff,S) :- \+ assignToSubcontractorA_Att(S),\+ assignToSubcontractorB_Att(S),orderMaterial_Sat(S).
+poss(badQualityA_Eff,S) :- \+ assignToSubcontractorA_Att(S),\+ assignToSubcontractorB_Att(S),orderMaterial_Sat(S).
+poss(goodQualityB_Eff,S) :- \+ assignToSubcontractorB_Att(S),\+ assignToSubcontractorA_Att(S),orderMaterial_Sat(S).
+poss(badQualityB_Eff,S) :- \+ assignToSubcontractorB_Att(S),\+ assignToSubcontractorA_Att(S),orderMaterial_Sat(S).
 
 
 poss(orderFromSupplierA,S) :- (poss(deliveredInTimeA_Eff,S);poss(neverDeliveredA_Eff,S);poss(deliveredLateA_Eff,S)).

@@ -314,7 +314,24 @@ class QueryEngine:
         s = "getInfeasiblePenalty(P)."
         penalty = list(self.prolog.query(s))[0]['P']
         return penalty
-    
+
+    def getDTGCalc (self):
+        """
+        Retrieves the DT-golog.
+
+        Returns
+        -------
+        penalty : float
+            The penalty incurred by the attempt of the infeasible action.
+
+        """
+        s = "dtgRun(L,U,P)."
+        policy = list(self.prolog.query(s))[0]['L']
+        utility = list(self.prolog.query(s))[0]['U']
+        probability = list(self.prolog.query(s))[0]['P']
+        return utility,probability, policy
+
+
     def close(self):
         self.prolog.retractall("init(_)")
         del self.prolog

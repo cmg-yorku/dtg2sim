@@ -258,6 +258,9 @@ class GMEnv(Env):
     # M I S C    H E L P E R S
     #
 
+    def getDTGCalc(self):
+        return self.qmi.getDTGCalc()
+
     def setSeed(self,newSeed):
         np.random.seed(newSeed)
         

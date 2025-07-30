@@ -253,9 +253,17 @@ class dtg2sim():
         print("Average Reward (including penalties) : {}".format(resultwp))
         print("Skipped Episodes (deadlocks)         : {}".format(skippedEpisodes))
         return result
-      
+
+    def learn(self, learn_iter=1_000, logging=1_000, algo="A2C", test_iter=1_000):
+        train_res = self.train(learn_iter, logging, algo)
+        test_res = self.test(test_iter)
+        return train_res, test_res
+
+    def getDTG(self):
+        return self.env.getDTGCalc()
+
     def getModel(self):
-        return(self.model)
+        return self.model
  
     def getEnvironment(self):
-        return(self.vec_env)
+        return self.vec_env

@@ -20,7 +20,7 @@ To ensure a reproducible environment, it is recommended to use a Python virtual 
 # Check Python version
 python --version  # Should show Python 3.13.x
    
-# Create virtual environment with Python 3.9
+# Create virtual environment
 python -m venv venv
    
 # Activate virtual environment
@@ -87,7 +87,12 @@ To debug.....: g.reset() followed by repeated g.step(agentAction,[stochasticActi
 For parameter info: help([dtg2sim or GMEnv].[method])
 ```
 
-Follow these directions to simulate or train and test the spec.
+Follow these directions to simulate or train and test the spec. 
+
+To run all tests (Windows):
+```
+.\run_tests_win.bat
+```
 # See also
 
 The (extended) DT-Golog will typically be the result of a translation from iStarDT-X, an XML based language for representing iStar-DT domains. Translation is accomplished via the [`dtx2X`](https://github.com/cmg-yorku/dtx2X) deserializer/validator and the accompanying `dtx2dtg` translator, both currently found in the [same repository](https://github.com/cmg-yorku/dtx2X).
